@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useState, useRef } from 'react';
+ import { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import { runDefiniteFlags } from './riskEngine/definiteFlags';
 import { runRulesEngine } from './riskEngine/rulesEngine';
