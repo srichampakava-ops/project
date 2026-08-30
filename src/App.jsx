@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Tesseract from 'tesseract.js';
-import { DEFINITE_FLAGS } from './riskEngine/definiteFlags';
+import { runDefiniteFlags } from './riskEngine/definiteFlags';
 import { runRulesEngine } from './riskEngine/rulesEngine';
 import { translateText } from './translate/translate';
 
@@ -23,13 +23,6 @@ function App() {
   const [warnings, setWarnings] = useState([]);
   const [translationFailed, setTranslationFailed] = useState(false);
   const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
-
-  const runDefiniteFlags = (text) => {
-    const lower = text.toLowerCase();
-    return DEFINITE_FLAGS.filter((flag) =>
-      flag.phrases.some((phrase) => lower.includes(phrase.toLowerCase()))
-    ).map((flag) => ({ id: flag.id, title: flag.id.replace(/_/g, ' ') }));
-  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -136,6 +129,12 @@ function App() {
           <ul>
             {warnings.map((w) => <li key={w.id}>{w.displayTitle}</li>)}
           </ul>
+        </div>
+      )}
+
+      {!loading && originalText && (
+        <div style={{ marginTop: '20px', padding: '12px', background: '#fff8e1', border: '1px solid #ffca28', borderRadius: '6px', fontSize: '14px', color: '#5f4a00' }}>
+           ⚠️ This is an automated screening tool, not legal advice. It checks for a specific list of common risks and may not catch every unfair term. Works best with clear, printed, single-page contracts. If any warning appears — or even if none do — please show this contract to someone you trust or a legal aid worker before signing.
         </div>
       )}
 
