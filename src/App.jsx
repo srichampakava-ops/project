@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import { runDefiniteFlags } from './riskEngine/definiteFlags';
 import { runRulesEngine } from './riskEngine/rulesEngine';
@@ -25,6 +26,8 @@ function App() {
   const [translationFailed, setTranslationFailed] = useState(false);
   const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -115,8 +118,9 @@ function App() {
         </div>
       </div>
 
-      <label className="scan-frame">
+      <div className="scan-frame" onClick={() => fileInputRef.current.click()}>
         <input
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           capture="environment"
@@ -139,7 +143,7 @@ function App() {
         <div className="corner corner-bl" />
         <div className="corner corner-br" />
         {loading && <div className="scan-line" />}
-      </label>
+      </div>
 
       {loading && <div className="status-text">{status}</div>}
 
