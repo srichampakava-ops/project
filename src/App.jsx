@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Tesseract from 'tesseract.js';
 import { runDefiniteFlags } from './riskEngine/definiteFlags';
 import { runRulesEngine } from './riskEngine/rulesEngine';
 import { translateText } from './translate/translate';
-import CameraCapture from './CameraCapture';
 import './App.css';
 
 const LANGUAGES = [
@@ -26,11 +25,9 @@ function App() {
   const [translationFailed, setTranslationFailed] = useState(false);
   const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
 
-  const fileInputRef = useRef(null);
-
-  const processFile = async (file) => {
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
 
     setImage(URL.createObjectURL(file));
@@ -90,23 +87,6 @@ function App() {
     setStatus('');
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    processFile(file);
-  };
-
-  const handleCameraCapture = (file) => {
-    setShowCamera(false);
-    processFile(file);
-  };
-
-  const handleCameraClose = (shouldFallback) => {
-    setShowCamera(false);
-    if (shouldFallback) {
-      fileInputRef.current?.click();
-    }
-  };
-
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -155,16 +135,17 @@ function App() {
       </div>
 
       <div className="scan-buttons">
-        <button
-          type="button"
-          className="scan-btn scan-btn-primary"
-          onClick={() => setShowCamera(true)}
-        >
+        <label className="scan-btn scan-btn-primary">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{ display: 'none' }}
+          />
           📷 Take Photo
-        </button>
+        </label>
         <label className="scan-btn scan-btn-secondary">
           <input
-            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
@@ -173,10 +154,6 @@ function App() {
           🖼️ Choose from Gallery
         </label>
       </div>
-
-      {showCamera && (
-        <CameraCapture onCapture={handleCameraCapture} onClose={handleCameraClose} />
-      )}
 
       {loading && <div className="status-text">{status}</div>}
 
