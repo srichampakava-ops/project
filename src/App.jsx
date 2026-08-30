@@ -115,13 +115,12 @@ function App() {
           </select>
         </div>
       </div>
-
-      <div className="scan-frame" onClick={() => { alert('tapped! ref exists: ' + !!fileInputRef.current); fileInputRef.current.click(); }}>
+ 
+      <div className="scan-frame" onClick={() => fileInputRef.current.click()}>
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
-          capture="environment"
+          accept="image/*" 
           onChange={handleImageUpload}
           style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
         />
