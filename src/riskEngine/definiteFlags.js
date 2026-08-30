@@ -3,11 +3,11 @@
 // This survives translation wording variance much better than exact phrases.
 
 export const DEFINITE_FLAGS = [
-  { id: 'nonrefundable_deposit', groups: [['deposit'], ['not refund', 'non-refund', 'cannot be refund', 'will not be return', 'not returned', 'no refund']] },
+  { id: 'nonrefundable_deposit', groups: [['deposit'], ['not refund', 'non-refund', 'cannot be refund', 'will not be return', 'not returned', 'no refund', 'not be refund', 'not refundable']] },
   { id: 'no_leave', groups: [['leave', 'holiday', 'day off', 'weekly off'], ['no', 'not allowed', 'not given', 'not granted', 'not provided']] },
   { id: 'salary_withheld', groups: [['salary', 'wage', 'pay'], ['withhold', 'held', 'deduct without notice', 'not paid']] },
   { id: 'no_notice_termination', groups: [['terminat', 'dismiss', 'fired', 'end employment'], ['without notice', 'no notice', 'any time', 'no warning']] },
-  { id: 'unlimited_hours', groups: [['working hours', 'work hours', 'hours of work'], ['no limit', 'unlimited', 'not fixed', 'as required', 'no fixed']] },
+  { id: 'unlimited_hours', groups: [['working hours', 'work hours', 'hours of work'], ['no limit', 'unlimited', 'not fixed', 'as required', 'no fixed', 'not set', 'undetermined', 'undecided']] },
   { id: 'passport_confiscation', groups: [['passport', 'document', 'aadhaar', 'id card'], ['held', 'retain', 'kept by', 'submitted and kept']] },
   { id: 'below_minimum_wage', groups: [['wage', 'salary', 'pay rate'], ['below minimum', 'less than minimum', 'not disclosed']] },
   { id: 'no_overtime_pay', groups: [['overtime', 'extra hour', 'extra time'], ['no pay', 'not paid', 'no extra payment', 'unpaid', 'no compensation']] },
