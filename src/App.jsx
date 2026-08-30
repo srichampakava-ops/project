@@ -23,6 +23,7 @@ function App() {
   const [warnings, setWarnings] = useState([]);
   const [translationFailed, setTranslationFailed] = useState(false);
   const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -112,6 +113,31 @@ function App() {
       <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} />
 
       {image && <img src={image} alt="contract" style={{ maxWidth: '100%', marginTop: '15px' }} />}
+      
+      {!loading && originalText && (
+        <div style={{ marginTop: '15px' }}>
+           <button onClick={() => setShowOriginal(!showOriginal)} style={{ fontSize: '13px', cursor: 'pointer' }}>
+             {showOriginal ? 'Hide' : 'Show'} original text & translation
+           </button>
+
+           {showOriginal && (
+             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                <strong style={{ fontSize: '13px' }}>Original (as scanned):</strong>
+                <pre style={{ whiteSpace: 'pre-wrap', background: '#f0f0f0', padding: '8px', fontSize: '13px', marginTop: '4px' }}>
+                {originalText}
+                </pre>
+              </div>
+              <div>
+               <strong style={{ fontSize: '13px' }}>Translated to English (used for analysis):</strong>
+               <pre style={{ whiteSpace: 'pre-wrap', background: '#f0f0f0', padding: '8px', fontSize: '13px', marginTop: '4px' }}>
+               {englishText}
+               </pre>
+             </div>
+           </div>
+          )}
+        </div>
+      )}
 
       {loading && <p>{status}</p>}
 
