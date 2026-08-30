@@ -115,13 +115,7 @@ function App() {
         </div>
       </div>
 
-      <label className="scan-frame">
-        <input
-          type="file"
-          accept="image/*" 
-          onChange={handleImageUpload}
-          style={{ display: 'none' }}
-        />
+      <div className="scan-frame">
         {image ? (
           <img src={image} alt="scanned contract" />
         ) : (
@@ -130,7 +124,7 @@ function App() {
               <path d="M4 8V6a2 2 0 0 1 2-2h2M20 8V6a2 2 0 0 0-2-2h-2M4 16v2a2 2 0 0 0 2 2h2M20 16v2a2 2 0 0 1-2 2h-2" strokeLinecap="round" />
               <circle cx="12" cy="12" r="3.5" />
             </svg>
-            <span>Tap to photograph or upload a contract</span>
+            <span>Take or upload a photo of your contract</span>
           </div>
         )}
         <div className="corner corner-tl" />
@@ -138,7 +132,29 @@ function App() {
         <div className="corner corner-bl" />
         <div className="corner corner-br" />
         {loading && <div className="scan-line" />}
-      </label>
+      </div>
+
+      <div className="scan-buttons">
+        <label className="scan-btn scan-btn-primary">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageUpload}
+            style={{ display: 'none' }}
+          />
+          📷 Take Photo
+        </label>
+        <label className="scan-btn scan-btn-secondary">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{ display: 'none' }}
+          />
+          🖼️ Choose from Gallery
+        </label>
+      </div>
 
       {loading && <div className="status-text">{status}</div>}
 

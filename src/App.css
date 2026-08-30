@@ -141,6 +141,34 @@ body {
   border: 3px solid var(--color-amber);
   pointer-events: none;
 }
+
+.scan-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.scan-btn {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scan-btn-primary {
+  background: var(--color-navy);
+  color: white;
+}
+
+.scan-btn-secondary {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-navy);
+}
+
 .corner-tl { top: 12px; left: 12px; border-right: none; border-bottom: none; border-radius: 6px 0 0 0; }
 .corner-tr { top: 12px; right: 12px; border-left: none; border-bottom: none; border-radius: 0 6px 0 0; }
 .corner-bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-radius: 0 0 0 6px; }
