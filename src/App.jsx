@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import Tesseract from 'tesseract.js';
-import { runDefiniteFlags } from './riskEngine/definiteFlags';
-import { runRulesEngine } from './riskEngine/rulesEngine';
-import { translateText } from './translate/translate';
-import './App.css';
+import { useRef, useState } from 'react'
+import Tesseract from 'tesseract.js'
+import { runDefiniteFlags } from './riskEngine/definiteFlags'
+import { runRulesEngine } from './riskEngine/rulesEngine'
+import { translateText } from './translate/translate'
+import './App.css'
 
 const LANGUAGES = [
   { code: 'en', tesseractCode: 'eng', label: 'English' },
@@ -11,237 +11,350 @@ const LANGUAGES = [
   { code: 'ta', tesseractCode: 'tam', label: 'Tamil' },
   { code: 'bn', tesseractCode: 'ben', label: 'Bengali' },
   { code: 'te', tesseractCode: 'tel', label: 'Telugu' },
-];
+]
+const MAX_BYTES = 20 * 1024 * 1024
+const ACCEPTED = ['image/jpeg', 'image/png']
 
-function App() {
-  const [contractLang, setContractLang] = useState('en');
-  const [workerLang, setWorkerLang] = useState('en');
-  const [image, setImage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
-  const [originalText, setOriginalText] = useState('');
-  const [englishText, setEnglishText] = useState('');
-  const [warnings, setWarnings] = useState([]);
-  const [translationFailed, setTranslationFailed] = useState(false);
-  const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
+/* ---------- Inline icons ---------- */
+const svgBase = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+function ShieldCheckIcon(props) {
+  return (<svg viewBox="0 0 24 26" aria-hidden="true" {...props}><path {...svgBase} d="M12 1.5 3 4.5v7c0 5.5 3.8 10.6 9 12.5 5.2-1.9 9-7 9-12.5v-7L12 1.5Z" /><path {...svgBase} d="m8.5 12.5 2.5 2.5 4.5-5" /></svg>)
+}
+function GlobeIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><circle {...svgBase} cx="12" cy="12" r="9" /><path {...svgBase} d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" /></svg>)
+}
+function DocIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path {...svgBase} d="M6 2h8l4 4v16H6V2Z" /><path {...svgBase} d="M14 2v4h4M9 12h6M9 16h6M9 8h2" /></svg>)
+}
+function CloudUploadIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path {...svgBase} d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 9.5a3.5 3.5 0 0 1 .5 6.98" /><path {...svgBase} d="M12 12v7M9 14.5l3-3 3 3" /></svg>)
+}
+function FolderIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path {...svgBase} d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5v-12Z" /></svg>)
+}
+function DocScanIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path {...svgBase} d="M6 2h8l4 4v6M6 2v20h6" /><path {...svgBase} d="M14 2v4h4M9 9h4M9 12h3" /><circle {...svgBase} cx="16" cy="17" r="3.2" /><path {...svgBase} d="m18.4 19.4 2.1 2.1" /></svg>)
+}
+function WarningIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path {...svgBase} d="M12 3 1.5 21h21L12 3Z" /><path {...svgBase} d="M12 9v5M12 17.5h.01" /></svg>)
+}
+function CheckCircleIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><circle {...svgBase} cx="12" cy="12" r="9" /><path {...svgBase} d="m8 12 2.5 2.5L16 9" /></svg>)
+}
+function InfoIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><circle {...svgBase} cx="12" cy="12" r="9" /><path {...svgBase} d="M12 11v5M12 8h.01" /></svg>)
+}
+function ChevronDownIcon(props) {
+  return (<svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path {...svgBase} d="m6 9 6 6 6-6" /></svg>)
+}
+function LeafIcon(props) {
+  return (<svg viewBox="0 0 120 120" aria-hidden="true" fill="currentColor" {...props}><path d="M110 12C70 16 40 34 26 62c-6 12-8 26-6 40 2-10 6-19 12-27 2 8 8 15 16 19-4-8-5-17-2-25 8 6 18 9 28 8-8-5-14-12-16-21 12 3 25 1 36-6-10-1-19-6-25-14 14-2 27-11 34-24-9 4-19 5-28 3 12-9 20-22 25-38Z" /></svg>)
+}
 
-    setImage(URL.createObjectURL(file));
-    setWarnings([]);
-    setTranslationFailed(false);
-    setOcrLowConfidence(false);
-    setShowOriginal(false);
-    setLoading(true);
+/* ---------- Results panel ---------- */
+function ResultsPanel({ status, statusMessage, result, ocrLowConfidence, translationFailed }) {
+  const [showOriginal, setShowOriginal] = useState(false)
 
-    const contractLangObj = LANGUAGES.find((l) => l.code === contractLang);
+  if (status === 'analyzing') {
+    return (
+      <div className="results" aria-live="polite">
+        <div className="analyzing">
+          <div className="spinner" aria-hidden="true" />
+          <p>{statusMessage || 'Scanning your contract for potential labor-rights issues…'}</p>
+        </div>
+      </div>
+    )
+  }
 
-    setStatus('Reading text from photo...');
-    const ocrResult = await Tesseract.recognize(file, contractLangObj.tesseractCode, {
+  if (status === 'idle' || !result) {
+    return (
+      <div className="results" aria-live="polite">
+        <div className="results-empty">
+          <DocScanIcon className="results-empty-icon" />
+          <h3>Analysis Results Will Appear Here</h3>
+          <p>Upload a contract to scan and detect potential issues.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const hasWarnings = result.warnings.length > 0
+
+  return (
+    <div className="results" aria-live="polite">
+      <div className="results-head">
+        <h3>Analysis Results</h3>
+        <button type="button" className="toggle" aria-pressed={showOriginal} onClick={() => setShowOriginal((v) => !v)}>
+          <span className={`toggle-track${showOriginal ? ' on' : ''}`}><span className="toggle-knob" /></span>
+          Show original text &amp; translation
+        </button>
+      </div>
+
+      {ocrLowConfidence && (
+        <div className="disclaimer" role="note" style={{ marginTop: '10px' }}>
+          <InfoIcon />
+          <p>The photo text wasn't very clear — results may be less accurate. Try retaking with better lighting.</p>
+        </div>
+      )}
+
+      {translationFailed && (
+        <div className="disclaimer" role="note" style={{ marginTop: '10px' }}>
+          <InfoIcon />
+          <p>Translation service unavailable — some results use original text and may be less accurate.</p>
+        </div>
+      )}
+
+      {showOriginal && (
+        <div className="original-box">
+          <div className="col">
+            <h4>Original Text</h4>
+            <p>{result.originalText}</p>
+          </div>
+          <div className="col">
+            <h4>Translation</h4>
+            <p>{result.translatedText}</p>
+          </div>
+        </div>
+      )}
+
+      {hasWarnings ? (
+        <ul className="warn-list">
+          {result.warnings.map((w) => (
+            <li key={w.id} className="warn-item">
+              <WarningIcon className="warn-icon" />
+              <div>
+                <h5>{w.displayTitle}</h5>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="success-box" role="status">
+          <CheckCircleIcon />
+          <div>
+            <strong>No labor-rights risks detected</strong>
+            <span>This contract passed the automated screening with zero warnings.</span>
+          </div>
+        </div>
+      )}
+
+      <div className="disclaimer" role="note">
+        <InfoIcon />
+        <p>This is an automated screening tool, not legal advice. It checks for a specific list of common risks and may not catch every unfair term. Please show this contract to someone you trust or a legal aid worker before signing.</p>
+      </div>
+    </div>
+  )
+}
+
+/* ---------- Main app ---------- */
+export default function App() {
+  const [contractLang, setContractLang] = useState('en')
+  const [outputLang, setOutputLang] = useState('en')
+  const [file, setFile] = useState(null)
+  const [error, setError] = useState('')
+  const [dragging, setDragging] = useState(false)
+  const [status, setStatus] = useState('idle')
+  const [statusMessage, setStatusMessage] = useState('')
+  const [result, setResult] = useState(null)
+  const [ocrLowConfidence, setOcrLowConfidence] = useState(false)
+  const [translationFailed, setTranslationFailed] = useState(false)
+  const inputRef = useRef(null)
+
+  function validateAndSet(f) {
+    if (!f) return
+    if (!ACCEPTED.includes(f.type)) {
+      setError('Unsupported file type. Please upload a JPG or PNG image.')
+      return
+    }
+    if (f.size > MAX_BYTES) {
+      setError('File is too large. Maximum size is 20MB.')
+      return
+    }
+    setError('')
+    setFile(f)
+    runAnalysis(f)
+  }
+
+  async function runAnalysis(f) {
+    setStatus('analyzing')
+    setResult(null)
+    setOcrLowConfidence(false)
+    setTranslationFailed(false)
+
+    const contractLangObj = LANGUAGES.find((l) => l.code === contractLang)
+
+    setStatusMessage('Reading text from photo...')
+    const ocrResult = await Tesseract.recognize(f, contractLangObj.tesseractCode, {
       langPath: 'https://tessdata.projectnaptha.com/4.0.0',
       logger: (m) => {
         if (m.status === 'recognizing text') {
-          setStatus(`Reading text... ${Math.round(m.progress * 100)}%`);
+          setStatusMessage(`Reading text... ${Math.round(m.progress * 100)}%`)
         }
       },
-    });
-    const extractedText = ocrResult.data.text;
-    setOriginalText(extractedText);
-    setOcrLowConfidence(ocrResult.data.confidence < 70);
+    })
+    const extractedText = ocrResult.data.text
+    setOcrLowConfidence(ocrResult.data.confidence < 70)
 
-    setStatus('Translating to English for analysis...');
-    const englishVersion = await translateText(extractedText, contractLang, 'en');
+    setStatusMessage('Translating to English for analysis...')
+    const englishVersion = await translateText(extractedText, contractLang, 'en')
 
-    let textForRules = englishVersion;
-    let mainTranslationFailed = false;
+    let textForRules = englishVersion
+    let mainTranslationFailed = false
     if (!englishVersion) {
-      mainTranslationFailed = true;
-      textForRules = extractedText;
+      mainTranslationFailed = true
+      textForRules = extractedText
     }
-    setEnglishText(textForRules);
 
-    setStatus('Checking for risks...');
-    const layer1 = runRulesEngine(textForRules);
-    const layer2 = runDefiniteFlags(extractedText + ' ' + (englishVersion || ''));
+    setStatusMessage('Checking for risks...')
+    const layer1 = runRulesEngine(textForRules)
+    const layer2 = runDefiniteFlags(extractedText + ' ' + (englishVersion || ''))
+    const allWarnings = [...layer2, ...layer1.filter((w1) => !layer2.some((w2) => w2.id === w1.id))]
 
-    const allWarnings = [...layer2, ...layer1.filter(
-      (w1) => !layer2.some((w2) => w2.id === w1.id)
-    )];
-
-    setStatus('Translating warnings to your language...');
-    let anyWarningTranslationFailed = false;
+    setStatusMessage('Translating warnings to your language...')
+    let anyWarningTranslationFailed = false
     const translatedWarnings = await Promise.all(
       allWarnings.map(async (w) => {
-        const translatedTitle = await translateText(w.title, 'en', workerLang);
-        if (!translatedTitle) anyWarningTranslationFailed = true;
-        return { ...w, displayTitle: translatedTitle || w.title };
+        const translatedTitle = await translateText(w.title, 'en', outputLang)
+        if (!translatedTitle) anyWarningTranslationFailed = true
+        return { ...w, displayTitle: translatedTitle || w.title }
       })
-    );
+    )
 
-    setTranslationFailed(mainTranslationFailed || anyWarningTranslationFailed);
-    setWarnings(translatedWarnings);
-    setLoading(false);
-    setStatus('');
-  };
+    setTranslationFailed(mainTranslationFailed || anyWarningTranslationFailed)
+    setResult({
+      warnings: translatedWarnings,
+      originalText: extractedText,
+      translatedText: textForRules,
+    })
+    setStatus('done')
+  }
+
+  function onFileChange(e) {
+    validateAndSet(e.target.files && e.target.files[0])
+  }
+
+  function onDrop(e) {
+    e.preventDefault()
+    setDragging(false)
+    validateAndSet(e.dataTransfer.files && e.dataTransfer.files[0])
+  }
+
+  function clearFile() {
+    setFile(null)
+    setError('')
+    setStatus('idle')
+    setResult(null)
+    if (inputRef.current) inputRef.current.value = ''
+  }
 
   return (
-    <div className="app-shell">
-      <div className="top-bar">
-        <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
-          <path d="M24 4L8 10v10c0 11 6.7 18.5 16 24 9.3-5.5 16-13 16-24V10L24 4z"
-                stroke="#4A5636" strokeWidth="2.2" strokeLinejoin="round" fill="#FBF9F3" />
-          <path d="M16 24l2 6 4-9M22 22h9M22 27h6" stroke="#4A5636" strokeWidth="2" strokeLinecap="round" />
-          <circle cx="34" cy="14" r="4.5" fill="#E9A23B" />
-        </svg>
-        <div>
-          <div className="top-bar-title">SafeContract</div>
-          <div className="top-bar-sub">Contract review for a safer workforce</div>
+    <div className="app">
+      <LeafIcon className="leaf leaf-tr" />
+      <LeafIcon className="leaf leaf-bl" />
+      <LeafIcon className="leaf leaf-br" />
+
+      <header className="header">
+        <div className="brand">
+          <ShieldCheckIcon className="brand-shield" />
+          <div>
+            <h1 className="brand-name">SafeContract</h1>
+            <p className="brand-tag">Contract review for a safer workforce</p>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="page-heading">
-        <h1>Worker Contract Scanner</h1>
-        <p>Upload a contract and check it for common labor rights risks</p>
-      </div>
-
-        <div className="step-grid">
-          <div className="step-card">
-           <div className="step-number">1</div>
-           <div className="step-icon">
-             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#435030" strokeWidth="1.8">
-              <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z" strokeLinecap="round" />
-             </svg>
-           </div>
-           <h3>Contract Language</h3>
-           <p className="step-desc">Select the language of the contract</p>
-           <div className="select-wrap">
-            <select value={contractLang} onChange={(e) => setContractLang(e.target.value)}>
-              {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
-            </select>
-           </div>
+      <main>
+        <div className="hero">
+          <div className="hero-title-row">
+            <DocScanIcon className="hero-icon" />
+            <h2 className="hero-title">Worker Contract Scanner</h2>
           </div>
-
-          <div className="step-card">
-            <div className="step-number">2</div>
-            <div className="step-icon">
-             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#435030" strokeWidth="1.8">
-              <path d="M7 3h7l5 5v13H7z" strokeLinejoin="round" /><path d="M14 3v5h5M9 13h6M9 17h6" strokeLinecap="round" />
-             </svg>
-           </div>
-           <h3>Output Language</h3>
-           <p className="step-desc">Select the language for results</p>
-           <div className="select-wrap">
-            <select value={workerLang} onChange={(e) => setWorkerLang(e.target.value)}>
-              {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
-            </select>
-           </div>
-          </div>
-
-         <div className="step-card">
-           <div className="step-number">3</div>
-           <div className="step-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#435030" strokeWidth="1.8">
-              <path d="M12 3v12M7 8l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <h3>Upload Contract</h3>
-          <p className="step-desc">Upload your contract as a photo</p>
-          <label className="dropzone">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-            />
-            {image ? (
-              <img src={image} alt="uploaded contract" />
-            ) : (
-              <>
-                <div style={{ fontSize: '28px' }}>📁</div>
-                <div className="dropzone-text">Tap to choose a file</div>
-              </>
-            )}
-            <span className="dropzone-btn">Choose File</span>
-          </label>
-          <div className="dropzone-note">Supported: JPG, PNG · Max 20MB</div>
+          <p className="hero-sub">
+            Upload a photo of your employment contract, scan for labor-rights red flags,
+            and get clear insights in your language.
+          </p>
         </div>
-      </div>
 
-      <div className="results-panel">
-        {loading && <div className="status-text">{status}</div>}
-
-        {ocrLowConfidence && (
-          <div className="alert alert-orange">
-            ⚠️ The photo text wasn't very clear — results may be less accurate. Try retaking the photo with better lighting and a flatter angle.
-          </div>
-        )}
-
-        {translationFailed && (
-          <div className="alert alert-orange">
-            ⚠️ Translation service unavailable — some results use original text and may be less accurate.
-          </div>
-        )}
-
-        {!loading && originalText && (
-          <>
-            <button className="toggle-btn" onClick={() => setShowOriginal(!showOriginal)}>
-              {showOriginal ? 'Hide' : 'Show'} original text & translation
-            </button>
-            {showOriginal && (
-              <div className="original-block">
-                <div>
-                  <h4>Original (as scanned)</h4>
-                  <pre>{originalText}</pre>
-                </div>
-                <div>
-                  <h4>Translated to English</h4>
-                  <pre>{englishText}</pre>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {!loading && warnings.length > 0 && (
-          <div style={{ marginTop: '16px' }}>
-            <p className="warnings-title">⚠️ Warnings found</p>
-            <ul>
-              {warnings.map((w) => <li key={w.id}>{w.displayTitle}</li>)}
-            </ul>
-          </div>
-        )}
-
-        {!loading && originalText && warnings.length === 0 && (
-          <p className="success-text" style={{ marginTop: '16px' }}>✅ No red flags detected in this scan</p>
-        )}
-
-        {!loading && originalText && (
-          <div className="disclaimer">
-            ⚠️ This is an automated screening tool, not legal advice. It checks for a specific list of common risks and may not catch every unfair term. Works best with clear, printed, single-page contracts. If any warning appears — or even if none do — please show this contract to someone you trust or a legal aid worker before signing.
-          </div>
-        )}
-        
-        {!loading && !originalText && (
-          <div className="results-placeholder">
-            <div className="icon-circle">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7A4F" strokeWidth="1.8">
-                <circle cx="10" cy="10" r="6" /><path d="M20 20l-4.5-4.5" strokeLinecap="round" />
-              </svg>
+        <div className="grid">
+          <section className="card" aria-labelledby="step1-title">
+            <div className="badge"><GlobeIcon /></div>
+            <h2 className="card-title" id="step1-title">1. Contract Language</h2>
+            <p className="card-desc">Select the language of the contract</p>
+            <div className="select-wrap">
+              <label className="sr-only" htmlFor="contract-lang">Contract language</label>
+              <select id="contract-lang" className="select" value={contractLang} onChange={(e) => setContractLang(e.target.value)}>
+                {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+              </select>
+              <ChevronDownIcon className="select-chevron" />
             </div>
-            <h4>Analysis Results Will Appear Here</h4>
-            <p>Upload a contract to scan for potential issues</p>
-          </div>
-        )}
-      </div>
+          </section>
 
-      <div className="footer-note">
-        🔒 Your document stays on this device. Only extracted text is sent to translation services for language conversion.
-      </div>
+          <section className="card" aria-labelledby="step2-title">
+            <div className="badge"><DocIcon /></div>
+            <h2 className="card-title" id="step2-title">2. Output Language</h2>
+            <p className="card-desc">Select the language for the analysis output</p>
+            <div className="select-wrap">
+              <label className="sr-only" htmlFor="output-lang">Output language</label>
+              <select id="output-lang" className="select" value={outputLang} onChange={(e) => setOutputLang(e.target.value)}>
+                {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+              </select>
+              <ChevronDownIcon className="select-chevron" />
+            </div>
+          </section>
+
+          <section className="card" aria-labelledby="step3-title">
+            <div className="badge"><CloudUploadIcon /></div>
+            <h2 className="card-title" id="step3-title">3. Upload Contract</h2>
+            <p className="card-desc">Upload your worker contract document</p>
+
+            <div
+              className={`dropzone${dragging ? ' drag' : ''}`}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+            >
+              <FolderIcon className="dropzone-folder" />
+              <div className="dropzone-text">Drag &amp; Drop your file here</div>
+              <div className="dropzone-or">or</div>
+              <button type="button" className="choose-btn" onClick={() => inputRef.current && inputRef.current.click()}>
+                Choose File
+              </button>
+              <input ref={inputRef} type="file" accept="image/jpeg,image/png" hidden onChange={onFileChange} />
+
+              <p className="upload-formats">Supported formats: JPG, PNG<br />Max file size: 20MB</p>
+
+              {file && (
+                <div className="file-chip">
+                  <span>{file.name}</span>
+                  <button type="button" onClick={clearFile} aria-label="Remove file">&times;</button>
+                </div>
+              )}
+              {error && <p className="upload-error">{error}</p>}
+            </div>
+          </section>
+        </div>
+
+        <div className="results-wrap">
+          <ResultsPanel
+            status={status}
+            statusMessage={statusMessage}
+            result={result}
+            ocrLowConfidence={ocrLowConfidence}
+            translationFailed={translationFailed}
+          />
+        </div>
+      </main>
+
+      <footer className="footer">
+        <span className="footer-pill">
+          <ShieldCheckIcon style={{ width: 18, height: 18 }} />
+          Your data is secure. We do not store your documents.
+        </span>
+        <p className="footer-note">
+          Your contract is processed only to generate this screening and is never saved or shared.
+        </p>
+      </footer>
     </div>
-  );
+  )
 }
-
-export default App;
