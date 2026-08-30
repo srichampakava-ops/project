@@ -118,8 +118,7 @@ function App() {
       <label className="scan-frame">
         <input
           type="file"
-          accept="image/*"
-          capture="environment"
+          accept="image/*" 
           onChange={handleImageUpload}
           style={{ display: 'none' }}
         />
