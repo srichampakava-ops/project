@@ -26,7 +26,6 @@ function App() {
   const [translationFailed, setTranslationFailed] = useState(false);
   const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleImageUpload = async (e) => {
