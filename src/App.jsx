@@ -116,7 +116,7 @@ function App() {
         </div>
       </div>
 
-      <div className="scan-frame" onClick={() => fileInputRef.current.click()}>
+      <div className="scan-frame" onClick={() => { alert('tapped! ref exists: ' + !!fileInputRef.current); fileInputRef.current.click(); }}>
         <input
           ref={fileInputRef}
           type="file"
