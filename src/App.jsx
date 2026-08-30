@@ -3,6 +3,7 @@ import Tesseract from 'tesseract.js';
 import { runDefiniteFlags } from './riskEngine/definiteFlags';
 import { runRulesEngine } from './riskEngine/rulesEngine';
 import { translateText } from './translate/translate';
+import './App.css';
 
 const LANGUAGES = [
   { code: 'en', tesseractCode: 'eng', label: 'English' },
@@ -33,6 +34,7 @@ function App() {
     setWarnings([]);
     setTranslationFailed(false);
     setOcrLowConfidence(false);
+    setShowOriginal(false);
     setLoading(true);
 
     const contractLangObj = LANGUAGES.find((l) => l.code === contractLang);
@@ -48,9 +50,7 @@ function App() {
     });
     const extractedText = ocrResult.data.text;
     setOriginalText(extractedText);
-
-    const avgConfidence = ocrResult.data.confidence;
-    setOcrLowConfidence(avgConfidence < 70);
+    setOcrLowConfidence(ocrResult.data.confidence < 70);
 
     setStatus('Translating to English for analysis...');
     const englishVersion = await translateText(extractedText, contractLang, 'en');
@@ -59,7 +59,7 @@ function App() {
     let mainTranslationFailed = false;
     if (!englishVersion) {
       mainTranslationFailed = true;
-      textForRules = extractedText; // fallback: still try rules on original text
+      textForRules = extractedText;
     }
     setEnglishText(textForRules);
 
@@ -88,84 +88,110 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.5">
-          <path d="M12 2L4 5v6c0 5.5 3.5 9.5 8 11 4.5-1.5 8-5.5 8-11V5l-8-3z" strokeLinejoin="round" />
-          <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    <div className="app-shell">
+      <header className="app-header">
+        <svg className="app-logo" width="52" height="52" viewBox="0 0 48 48" fill="none">
+          <path d="M24 4L8 10v10c0 11 6.7 18.5 16 24 9.3-5.5 16-13 16-24V10L24 4z"
+                stroke="#1D3557" strokeWidth="2.2" strokeLinejoin="round" fill="#F7F8FA" />
+          <path d="M16 24l2 6 4-9M22 22h9M22 27h6" stroke="#1D3557" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="34" cy="14" r="4.5" fill="#E9A23B" />
         </svg>
+        <div className="app-tagline">Contract Risk Scanner</div>
+        <div className="app-subtagline">Scan a work contract to check for common risks</div>
+      </header>
+
+      <div className="lang-row">
+        <div className="lang-field">
+          <label>Contract language</label>
+          <select value={contractLang} onChange={(e) => setContractLang(e.target.value)}>
+            {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+          </select>
+        </div>
+        <div className="lang-field">
+          <label>Show results in</label>
+          <select value={workerLang} onChange={(e) => setWorkerLang(e.target.value)}>
+            {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+          </select>
+        </div>
       </div>
 
-      <div style={{ marginBottom: '15px' }}>
-        <label>Contract is written in: </label>
-        <select value={contractLang} onChange={(e) => setContractLang(e.target.value)}>
-          {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
-        </select>
-      </div>
+      <label className="scan-frame">
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleImageUpload}
+          style={{ display: 'none' }}
+        />
+        {image ? (
+          <img src={image} alt="scanned contract" />
+        ) : (
+          <div className="scan-frame-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C9D3E0" strokeWidth="1.6">
+              <path d="M4 8V6a2 2 0 0 1 2-2h2M20 8V6a2 2 0 0 0-2-2h-2M4 16v2a2 2 0 0 0 2 2h2M20 16v2a2 2 0 0 1-2 2h-2" strokeLinecap="round" />
+              <circle cx="12" cy="12" r="3.5" />
+            </svg>
+            <span>Tap to photograph or upload a contract</span>
+          </div>
+        )}
+        <div className="corner corner-tl" />
+        <div className="corner corner-tr" />
+        <div className="corner corner-bl" />
+        <div className="corner corner-br" />
+        {loading && <div className="scan-line" />}
+      </label>
 
-      <div style={{ marginBottom: '15px' }}>
-        <label>Show warnings in: </label>
-        <select value={workerLang} onChange={(e) => setWorkerLang(e.target.value)}>
-          {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
-        </select>
-      </div>
+      {loading && <div className="status-text">{status}</div>}
 
-      <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} />
-
-      {image && <img src={image} alt="contract" style={{ maxWidth: '100%', marginTop: '15px' }} />}
-      
-      {!loading && originalText && (
-        <div style={{ marginTop: '15px' }}>
-           <button onClick={() => setShowOriginal(!showOriginal)} style={{ fontSize: '13px', cursor: 'pointer' }}>
-             {showOriginal ? 'Hide' : 'Show'} original text & translation
-           </button>
-
-           {showOriginal && (
-             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <strong style={{ fontSize: '13px' }}>Original (as scanned):</strong>
-                <pre style={{ whiteSpace: 'pre-wrap', background: '#f0f0f0', padding: '8px', fontSize: '13px', marginTop: '4px' }}>
-                {originalText}
-                </pre>
-              </div>
-              <div>
-               <strong style={{ fontSize: '13px' }}>Translated to English (used for analysis):</strong>
-               <pre style={{ whiteSpace: 'pre-wrap', background: '#f0f0f0', padding: '8px', fontSize: '13px', marginTop: '4px' }}>
-               {englishText}
-               </pre>
-             </div>
-           </div>
-          )}
+      {ocrLowConfidence && (
+        <div className="alert alert-orange">
+          ⚠️ The photo text wasn't very clear — results may be less accurate. Try retaking the photo with better lighting and a flatter angle.
         </div>
       )}
 
-      {loading && <p>{status}</p>}
-
-      {ocrLowConfidence && (
-        <p style={{ color: 'orange' }}>⚠️ The photo text wasn't very clear — results below may be less accurate. Consider retaking the photo with better lighting and a flatter angle.</p>
+      {translationFailed && (
+        <div className="alert alert-orange">
+          ⚠️ Translation service unavailable — some results use original text and may be less accurate.
+        </div>
       )}
 
-      {translationFailed && (
-        <p style={{ color: 'orange' }}>⚠️ Translation service unavailable — some results use original text and may be less accurate.</p>
+      {!loading && originalText && (
+        <>
+          <button className="toggle-btn" onClick={() => setShowOriginal(!showOriginal)}>
+            {showOriginal ? 'Hide' : 'Show'} original text & translation
+          </button>
+          {showOriginal && (
+            <div className="original-block">
+              <div>
+                <h4>Original (as scanned)</h4>
+                <pre>{originalText}</pre>
+              </div>
+              <div>
+                <h4>Translated to English</h4>
+                <pre>{englishText}</pre>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {!loading && warnings.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>⚠️ Warnings found:</h3>
+        <div className="results-card">
+          <p className="results-title">⚠️ Warnings found</p>
           <ul>
             {warnings.map((w) => <li key={w.id}>{w.displayTitle}</li>)}
           </ul>
         </div>
       )}
 
-      {!loading && originalText && (
-        <div style={{ marginTop: '20px', padding: '12px', background: '#fff8e1', border: '1px solid #ffca28', borderRadius: '6px', fontSize: '14px', color: '#5f4a00' }}>
-           ⚠️ This is an automated screening tool, not legal advice. It checks for a specific list of common risks and may not catch every unfair term. Works best with clear, printed, single-page contracts. If any warning appears — or even if none do — please show this contract to someone you trust or a legal aid worker before signing.
-        </div>
+      {!loading && originalText && warnings.length === 0 && (
+        <div className="success-card">✅ No red flags detected in this scan</div>
       )}
 
-      {!loading && originalText && warnings.length === 0 && (
-        <p style={{ marginTop: '20px', color: 'green' }}>✅ No red flags detected in this scan.</p>
+      {!loading && originalText && (
+        <div className="disclaimer">
+          ⚠️ This is an automated screening tool, not legal advice. It checks for a specific list of common risks and may not catch every unfair term. Works best with clear, printed, single-page contracts. If any warning appears — or even if none do — please show this contract to someone you trust or a legal aid worker before signing.
+        </div>
       )}
     </div>
   );
