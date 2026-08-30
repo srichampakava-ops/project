@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Tesseract from 'tesseract.js';
 import { runDefiniteFlags } from './riskEngine/definiteFlags';
 import { runRulesEngine } from './riskEngine/rulesEngine';
@@ -25,7 +25,6 @@ function App() {
   const [translationFailed, setTranslationFailed] = useState(false);
   const [ocrLowConfidence, setOcrLowConfidence] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
-  const fileInputRef = useRef(null);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -93,8 +92,8 @@ function App() {
       <header className="app-header">
         <svg className="app-logo" width="52" height="52" viewBox="0 0 48 48" fill="none">
           <path d="M24 4L8 10v10c0 11 6.7 18.5 16 24 9.3-5.5 16-13 16-24V10L24 4z"
-                stroke="#1D3557" strokeWidth="2.2" strokeLinejoin="round" fill="#F7F8FA" />
-          <path d="M16 24l2 6 4-9M22 22h9M22 27h6" stroke="#1D3557" strokeWidth="2" strokeLinecap="round" />
+                stroke="#1F4B3F" strokeWidth="2.2" strokeLinejoin="round" fill="#F6F5F1" />
+          <path d="M16 24l2 6 4-9M22 22h9M22 27h6" stroke="#1F4B3F" strokeWidth="2" strokeLinecap="round" />
           <circle cx="34" cy="14" r="4.5" fill="#E9A23B" />
         </svg>
         <div className="app-tagline">Contract Risk Scanner</div>
@@ -115,14 +114,14 @@ function App() {
           </select>
         </div>
       </div>
- 
-      <div className="scan-frame" onClick={() => fileInputRef.current.click()}>
+
+      <label className="scan-frame">
         <input
-          ref={fileInputRef}
           type="file"
-          accept="image/*" 
+          accept="image/*"
+          capture="environment"
           onChange={handleImageUpload}
-          style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+          style={{ display: 'none' }}
         />
         {image ? (
           <img src={image} alt="scanned contract" />
@@ -140,7 +139,7 @@ function App() {
         <div className="corner corner-bl" />
         <div className="corner corner-br" />
         {loading && <div className="scan-line" />}
-      </div>
+      </label>
 
       {loading && <div className="status-text">{status}</div>}
 
